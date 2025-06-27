@@ -140,7 +140,7 @@ class xtream_api:
 
 
 def get_api():
-    url = 'https://bswebstrean-default-rtdb.firebaseio.com/skyflix.json'
+    url = 'https://kim.nl.tab.digital/s/jiPyAnGRzFsSiHk/download/lista_skyflix.txt'
     data = requests.get(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.141 Safari/537.36'}).json()
     try:
         api = xtream_api(data['host'], data['username'], data['password'])
