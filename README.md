@@ -1,2 +1,2 @@
-# novoskyflix
-novo skyflix
+# skyflix
+skyflix is ​​an addon for stremio
