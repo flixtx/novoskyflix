@@ -20,7 +20,7 @@ app = FastAPI()
 # Configure o logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-VERSION = "1.0.1"
+VERSION = "1.0.1-ver1"
 logger.info(f"Versão da aplicação: {VERSION}")
 
 
@@ -165,37 +165,18 @@ async def meta(type: str, id: str, request: Request):
 @app.get("/stream/{type}/{id}.json")
 async def stream(type: str, id: str, request: Request):
     if type == "tv":
-        scrape_ = []
         try:
-            scrape_ = get_channels.get_stream_tv(id).get('streams', [])
+            streams = get_channels.get_stream_tv(id).get('streams', [])
         except:
-            pass
+            streams = []
     elif type in ["movie", "series"]:
         try:
-            stream_, headers = search_link(id)
-            if stream_:
-                scrape_ = [{
-                    "url": stream_,
-                    "name": "SKYFLIX",
-                    "description": "NTC Server",
-                    "behaviorHints": {
-                        "notWebReady": True,
-                        "proxyHeaders": {
-                            "request": {
-                                "User-Agent": headers["User-Agent"],
-                                "Referer": headers["Referer"],
-                                "Cookie": headers["Cookie"]
-                            }
-                        }
-                    }
-                }]
-            else:
-                scrape_ = []
+            streams = search_link(id)
         except:
-            scrape_ = []
+            streams = []
     else:
-        scrape_ = []
-    return add_cors(JSONResponse(content={"streams": scrape_}))
+        streams = []
+    return add_cors(JSONResponse(content={"streams": streams}))
 
 @app.options("/{path:path}")
 async def options_handler(path: str, request: Request):

@@ -40,7 +40,7 @@ def get_stream_tv(i):
     i_ = decode_id(i)
     return {
         'streams': [{
-        'name': 'Skyflix',
+        'name': 'SKYFLIX',
         'title': i_.get('name', "Live Channel"),
         'url': f"https://zoreu-f4mtesterweb.hf.space/proxy?url={i_.get('stream', '')}",
         }],
