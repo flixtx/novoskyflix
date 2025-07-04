@@ -9,15 +9,15 @@ def fix_b64(b64str):
     return b64str
 
 def encode_id(i):
-    id_base64 = base64.urlsafe_b64encode(i.encode()).decode()  # Use urlsafe_b64encode
-    id_base64_ = id_base64.rstrip('=')  # Remove padding '='
+    id_base64 = base64.urlsafe_b64encode(i.encode()).decode()
+    id_base64_ = id_base64.rstrip('=')
     return id_base64_
 
 def decode_id(i):
     if 'skyflix' in i:
         i = i.replace('skyflix:', '')
     b64decode_ = fix_b64(i)
-    dict_ = json.loads(base64.urlsafe_b64decode(b64decode_).decode())  # Use urlsafe_b64decode
+    dict_ = json.loads(base64.urlsafe_b64decode(b64decode_).decode())
     return dict_
 
 def get_meta_tv(i):
@@ -49,62 +49,100 @@ def get_stream_tv(i):
 
 class xtream_api:
     def __init__(self, dns, username, password):
-        self.live_url = '{0}/player_api.php?username={1}&password={2}&action=get_live_categories'.format(dns, username, password)
+        self.live_categories_url = '{0}/player_api.php?username={1}&password={2}&action=get_live_categories'.format(dns, username, password)
         self.player_api = '{0}/player_api.php?username={1}&password={2}'.format(dns, username, password)
         self.play_url = '{0}/live/{1}/{2}/'.format(dns,username,password)
-        # self.play_movies = '{0}/movie/{1}/{2}/'.format(dns,username,password)
-        # self.play_series = '{0}/series/{1}/{2}/'.format(dns,username,password)
 
+    def get_live_categories(self):
+        try:
+            response = requests.get(self.live_categories_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.141 Safari/537.36'})
+            response.raise_for_status() # Raise an HTTPError for bad responses (4xx or 5xx)
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Erro ao buscar categorias ao vivo: {e}")
+            return []
+        except json.JSONDecodeError as e:
+            print(f"Erro ao decodificar JSON das categorias ao vivo: {e}")
+            return []
 
     def list_channels(self, category):
-        #grupos: abertos, esportes, nba, ppv, paramount_plus, dazn, nossofutebol, ufc, combate, nfl, documentarios, infantil, filmeseseries, telecine, hbo, cinesky, noticias, musicas, variedades, cine24h, desenhos, series24h, 
-        # religiosos, 4k, radios
-        group = {'Abertos': ['sbt', 'abertos', 'globo', 'record'], 
-                 'Esportes': ['amazon', 'espn', 'sportv', 'premiere', 'sportv', 'premiere', 'esportes', 'disney', 'max'], 
-                 'NBA': ['nba'], 
-                 'PPV': ['ppv'], 
-                 'Paramount plus': ['paramount'], 
-                 'DAZN': ['dazn'], 
-                 'Nosso Futebol': ['nosso futebol'], 
-                 'UFC': ['ufc'], 
-                 'Combate': ['combate'], 
-                 'NFL': ['nfl'],
-                 'Documentarios': ['documentarios', 'documentários'],
-                 'Infantil': ['infantil'],
-                 'Filmes e Series': ['filmes e séries', 'filmes e series'],
-                 'Telecine': ['telecine'],
-                 'HBO': ['hbo'],
-                 'Cine Sky': ['cine sky'],
-                 'Noticias': ['noticias', 'notícias'],
-                 'Musicas': ['musicas', 'músicas'],
-                 'Variedades': ['variedades'],
-                 'Cine 24h': ['cine 24h'],
-                 'Desenhos': ['desenhos'],
-                 'Series 24h': ['séries 24h', 'series 24h', '24h series'],
-                 'Religiosos': ['religiosos'],
-                 '4K': ['4k'],
-                 'Radios': ['radios'],
-                 'Reality': ['power couple', 'a fazenda', 'bbb', 'big brother']
-                 }
+        # O dicionário 'group' fixo será substituído por uma lógica de mapeamento flexível.
+        # Por enquanto, vamos manter uma versão simplificada para demonstração.
+        # A ideia é que 'category_mapping' seja carregado de uma fonte remota.
+        
+        # Exemplo de mapeamento flexível (isso viria de uma fonte remota)
+        # Para este exemplo, vamos simular um mapeamento simples
+        category_mapping = {
+            'Abertos': ['sbt', 'abertos', 'globo', 'record'],
+            'Esportes': ['amazon', 'espn', 'sportv', 'premiere', 'esportes', 'disney', 'max'],
+            'NBA': ['nba'],
+            'PPV': ['ppv'],
+            'Paramount plus': ['paramount'],
+            'DAZN': ['dazn'],
+            'Nosso Futebol': ['nosso futebol'],
+            'UFC': ['ufc'],
+            'Combate': ['combate'],
+            'NFL': ['nfl'],
+            'Documentarios': ['documentarios', 'documentários'],
+            'Infantil': ['infantil'],
+            'Filmes e Series': ['filmes e séries', 'filmes e series'],
+            'Telecine': ['telecine'],
+            'HBO': ['hbo'],
+            'Cine Sky': ['cine sky'],
+            'Noticias': ['noticias', 'notícias'],
+            'Musicas': ['musicas', 'músicas'],
+            'Variedades': ['variedades'],
+            'Cine 24h': ['cine 24h'],
+            'Desenhos': ['desenhos'],
+            'Series 24h': ['séries 24h', 'series 24h', '24h series'],
+            'Religiosos': ['religiosos'],
+            '4K': ['4k'],
+            'Radios': ['radios'],
+            'Reality': ['power couple', 'a fazenda', 'bbb', 'big brother']
+        }
+
         itens = []
         try:
-            vod_cat = requests.get(self.live_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.141 Safari/537.36'}).json()
-            if vod_cat:
-                keys = group.get(category)
-                for key in keys:
-                    for cat in vod_cat:
-                        name = cat['category_name']
-                        name2 = name.lower()
-                        url = self.player_api + '&action=get_live_streams&category_id=' + str(cat['category_id'])
-                        if not 'All' in name:
-                            if key in name2:
-                                i = self.channels_open(url, category)
-                                if i:
-                                    for l in i:
-                                        itens.append(l)
-        except:
-            pass
-        return itens 
+            # Obter todas as categorias disponíveis do servidor Xtream
+            all_live_categories = self.get_live_categories()
+            
+            if all_live_categories:
+                # Obter as chaves de mapeamento para a categoria solicitada
+                keys_to_match = category_mapping.get(category, [])
+                
+                # Se não houver chaves de mapeamento, tentar usar a própria categoria como chave
+                if not keys_to_match and category:
+                    keys_to_match = [category.lower()]
+
+                for xtream_cat in all_live_categories:
+                    xtream_cat_name = xtream_cat.get('category_name', '').lower()
+                    xtream_cat_id = xtream_cat.get('category_id')
+
+                    if not xtream_cat_id:
+                        continue # Pular categorias sem ID
+
+                    # Verificar se o nome da categoria do Xtream corresponde a alguma das chaves de mapeamento
+                    # ou se a categoria solicitada está contida no nome da categoria do Xtream
+                    matched = False
+                    for key in keys_to_match:
+                        if key in xtream_cat_name:
+                            matched = True
+                            break
+                    
+                    # Adicionalmente, se a categoria solicitada for 'All', incluir todos os canais
+                    if category == 'All' and 'All' in xtream_cat.get('category_name', ''):
+                        matched = True
+
+                    if matched:
+                        url = self.player_api + '&action=get_live_streams&category_id=' + str(xtream_cat_id)
+                        i = self.channels_open(url, category)
+                        if i:
+                            for l in i:
+                                itens.append(l)
+        except Exception as e:
+            print(f"Erro em list_channels: {e}")
+            pass # Considerar um tratamento de erro mais robusto aqui
+        return itens
 
     def generate_id_channel(self, name, url, thumb, genre):
         i = {'name': name, 'stream': url, 'thumb': thumb, 'genre': genre}
@@ -115,40 +153,51 @@ class xtream_api:
 
     def channels_open(self, url, category):
         itens = []
-        vod_cat = requests.get(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.141 Safari/537.36'}).json()
-        if vod_cat:
-            for cat in vod_cat:
-                name = cat['name']
-                stream_id = str(cat['stream_id'])
-                url_ = '{0}{1}.m3u8'.format(self.play_url,stream_id)
-                try:
-                    thumb = 'https://bsweb1-image-proxy.hf.space/proxy-image/?url=' + cat['stream_icon']
-                except:
-                    thumb = ''
-                iten = {
-                    "id": self.generate_id_channel(name, url_, thumb, category),
-                    "type": "tv",
-                    "name": name,
-                    "poster": thumb,
-                    "background": thumb,
-                    "description": f"Canal {name} ao vivo.",
-                    "genres": [category]
-                }
-                itens.append(iten)
+        try:
+            response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.141 Safari/537.36'})
+            response.raise_for_status()
+            vod_cat = response.json()
+
+            if vod_cat:
+                for cat in vod_cat:
+                    name = cat.get('name', '')
+                    stream_id = str(cat.get('stream_id', ''))
+                    url_ = '{0}{1}.m3u8'.format(self.play_url,stream_id)
+                    try:
+                        thumb = 'https://bsweb1-image-proxy.hf.space/proxy-image/?url=' + cat.get('stream_icon', '')
+                    except:
+                        thumb = ''
+                    iten = {
+                        "id": self.generate_id_channel(name, url_, thumb, category),
+                        "type": "tv",
+                        "name": name,
+                        "poster": thumb,
+                        "background": thumb,
+                        "description": f"Canal {name} ao vivo.",
+                        "genres": [category]
+                    }
+                    itens.append(iten)
+        except requests.exceptions.RequestException as e:
+            print(f"Erro ao abrir canais: {e}")
+        except json.JSONDecodeError as e:
+            print(f"Erro ao decodificar JSON dos canais: {e}")
         return itens
 
 
 
 def get_api():
     url = 'https://bswebstrean-default-rtdb.firebaseio.com/skyflix.json'
-    data = requests.get(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.141 Safari/537.36'}).json()
     try:
+        response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.141 Safari/537.36'})
+        response.raise_for_status()
+        data = response.json()
         api = xtream_api(data['host'], data['username'], data['password'])
         return api
-    except Exception as e:
-        raise f'Erro em {e}'
-    
-
-
+    except requests.exceptions.RequestException as e:
+        raise RuntimeError(f'Erro ao buscar dados da API do Firebase: {e}')
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f'Erro ao decodificar JSON do Firebase: {e}')
+    except KeyError as e:
+        raise RuntimeError(f'Dados de API incompletos do Firebase: {e}')
 
 
