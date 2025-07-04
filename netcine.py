@@ -145,16 +145,17 @@ def opcoes_filmes(url,headers, host):
                     link = iframe
                 if 'dublado' in name.lower() and not 'streamtape' in link:
                     dublado.append(link)                    
-                elif 'legendado' in name.lower() and not 'streamtape' in link:
+                if 'legendado' in name.lower() and not 'streamtape' in link:
                     legendado.append(link)
     except:
         pass
+    dub = ''
+    leg = ''
     if dublado:
-        return dublado[-1]
-    elif legendado:
-        return legendado[-1]
-    else:
-        return ''
+        dub = dublado[-1]
+    if legendado:
+        leg = legendado[-1]
+    return dub, leg
     
 def check_item(search,headers,year_imdb,text):
     r = requests.get(search,headers=headers)
@@ -399,10 +400,9 @@ def scrape_search(host,headers,text,alternate,year_imdb,type):
 
 
 def search_link(id):
-    stream = ''
-    host = 'https://netcine.si/'
+    streams_final = []
+    host = 'https://netcinez.si/'
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, como Gecko) Chrome/88.0.4324.96 Safari/537.36"}
-    headers_ = {}
     try:
         if ':' in id:
             parts = id.split(':')
@@ -429,8 +429,45 @@ def search_link(id):
                                 if int(episode) == n:
                                     e_info = i.find('a')
                                     link = e_info.get('href')
-                                    page = opcoes_filmes(link,headers, new_host)
-                                    stream, headers_ = resolve_stream(page)
+                                    dub, leg = opcoes_filmes(link,headers, new_host)
+                                    if dub:                                        
+                                        stream_dub, headers_dub = resolve_stream(dub)
+                                        if stream_dub:
+                                            item_dub = {
+                                                "url": stream_dub,
+                                                "name": "SKYFLIX",
+                                                "description": "NTC Server - Dublado",
+                                                "behaviorHints": {
+                                                "notWebReady": True,
+                                                "proxyHeaders": {
+                                                                "request": {
+                                                                "User-Agent": headers_dub["User-Agent"],
+                                                                "Referer": headers_dub["Referer"],
+                                                                "Cookie": headers_dub["Cookie"]
+                                                                }
+                                                            }
+                                                    }
+                                            }
+                                            streams_final.append(item_dub)
+                                    if leg:                                        
+                                        stream_leg, headers_leg = resolve_stream(leg)
+                                        if stream_leg:
+                                            item_leg = {
+                                                "url": stream_leg,
+                                                "name": "SKYFLIX",
+                                                "description": "NTC Server - Legendado",
+                                                "behaviorHints": {
+                                                "notWebReady": True,
+                                                "proxyHeaders": {
+                                                                "request": {
+                                                                "User-Agent": headers_leg["User-Agent"],
+                                                                "Referer": headers_leg["Referer"],
+                                                                "Cookie": headers_leg["Cookie"]
+                                                                }
+                                                            }
+                                                    }
+                                            }
+                                            streams_final.append(item_leg)                                            
                                     break
                             break   
         else:
@@ -441,9 +478,46 @@ def search_link(id):
                 alternate = search_text[0]
                 link, new_host = scrape_search(host,headers,text,alternate,year_imdb,'movies')
                 if not '/tvshows/' in link:
-                    page = opcoes_filmes(link,headers, new_host)
-                    stream, headers_  = resolve_stream(page)
+                    dub, leg = opcoes_filmes(link,headers, new_host)
+                    if dub:                                        
+                        stream_dub, headers_dub = resolve_stream(dub)
+                        if stream_dub:
+                            item_dub = {
+                                "url": stream_dub,
+                                "name": "SKYFLIX",
+                                "description": "NTC Server - Dublado",
+                                "behaviorHints": {
+                                "notWebReady": True,
+                                "proxyHeaders": {
+                                                "request": {
+                                                "User-Agent": headers_dub["User-Agent"],
+                                                "Referer": headers_dub["Referer"],
+                                                "Cookie": headers_dub["Cookie"]
+                                                }
+                                            }
+                                    }
+                            }
+                            streams_final.append(item_dub)
+                    if leg:                                        
+                        stream_leg, headers_leg = resolve_stream(leg)
+                        if stream_leg:
+                            item_leg = {
+                                "url": stream_leg,
+                                "name": "SKYFLIX",
+                                "description": "NTC Server - Legendado",
+                                "behaviorHints": {
+                                "notWebReady": True,
+                                "proxyHeaders": {
+                                                "request": {
+                                                "User-Agent": headers_leg["User-Agent"],
+                                                "Referer": headers_leg["Referer"],
+                                                "Cookie": headers_leg["Cookie"]
+                                                }
+                                            }
+                                    }
+                            }
+                            streams_final.append(item_leg)  
     except:
         pass
-    return stream, headers_ 
+    return streams_final
 
