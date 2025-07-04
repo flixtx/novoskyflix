@@ -42,7 +42,7 @@ def get_stream_tv(i):
         'streams': [{
         'name': 'SKYFLIX',
         'title': i_.get('name', "Live Channel"),
-        'url': f"http://strawberry.fps.ms:10378/proxy?url={i_.get('stream', '')}",
+        'url': f"https://httpstream.brunoflix9.workers.dev/proxy?url={i_.get('stream', '')}",
         }],
     }
 
