@@ -10,7 +10,7 @@ def fix_b64(b64str):
 
 def encode_id(i):
     id_base64 = base64.urlsafe_b64encode(i.encode()).decode()
-    id_base64_ = id_base64.rstrip('=\n')
+    id_base64_ = id_base64.rstrip('=')
     return id_base64_
 
 def decode_id(i):
@@ -42,7 +42,7 @@ def get_stream_tv(i):
         'streams': [{
         'name': 'SKYFLIX',
         'title': i_.get('name', "Live Channel"),
-        'url': f"https://zoreu-f4mtesterweb.hf.space/proxy?url={i_.get('stream', '')}",
+        'url': f"https://bsweb1-f4mtesterweb.hf.space/proxy?url={i_.get('stream', '')}",
         }],
     }
 
@@ -163,7 +163,7 @@ class xtream_api:
                     stream_id = str(cat.get('stream_id', ''))
                     url_ = '{0}{1}.m3u8'.format(self.play_url,stream_id)
                     try:
-                        thumb = 'https://da5f663b4690-proxyimage.baby-beamup.club/proxy-image/?url=' + cat.get('stream_icon', '')
+                        thumb = 'https://bsweb1-image-proxy.hf.space/proxy-image/?url=' + cat.get('stream_icon', '')
                     except:
                         thumb = ''
                     iten = {
@@ -185,23 +185,16 @@ class xtream_api:
 
 
 def get_api():
-    url = 'https://drive.google.com/uc?export=download&id=1rCaCa20V8-IqREXszsqn4rXKlTbpBk4q'
+    url = 'https://bswebstrean-default-rtdb.firebaseio.com/skyflix.json'
     try:
         response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.141 Safari/537.36'})
-        response.raise_for_status()  # Levanta um HTTPError para respostas de erro (4xx ou 5xx)
+        response.raise_for_status()
         data = response.json()
-
-        # Verifica se as chaves necessárias estão presentes
-        if not all(k in data for k in ['host', 'username', 'password']):
-            raise ValueError('Dados de API incompletos: host, username ou password ausentes.')
-
         api = xtream_api(data['host'], data['username'], data['password'])
         return api
     except requests.exceptions.RequestException as e:
-        raise RuntimeError(f'Erro ao buscar dados da API do Google Drive: {e}')
+        raise RuntimeError(f'Erro ao buscar dados da API do Firebase: {e}')
     except json.JSONDecodeError as e:
-        raise RuntimeError(f'Erro ao decodificar JSON do Google Drive: {e}')
-    except ValueError as e:
-        raise RuntimeError(f'Erro de validação de dados: {e}')
-    except Exception as e:
-        raise RuntimeError(f'Erro inesperado em get_api(): {e}')
+        raise RuntimeError(f'Erro ao decodificar JSON do Firebase: {e}')
+    except KeyError as e:
+        raise RuntimeError(f'Dados de API incompletos do Firebase: {e}')
