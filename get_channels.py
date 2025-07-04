@@ -42,7 +42,7 @@ def get_stream_tv(i):
         'streams': [{
         'name': 'SKYFLIX',
         'title': i_.get('name', "Live Channel"),
-        'url': f"https://bsweb1-f4mtesterweb.hf.space/proxy?url={i_.get('stream', '')}",
+        'url': f"https://proxyhls.brunoflix9.workers.dev/proxy?url={i_.get('stream', '')}",
         }],
     }
 
