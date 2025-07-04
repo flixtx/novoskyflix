@@ -122,7 +122,7 @@ class xtream_api:
                 stream_id = str(cat['stream_id'])
                 url_ = '{0}{1}.m3u8'.format(self.play_url,stream_id)
                 try:
-                    thumb = 'https://da5f663b4690-proxyimage.baby-beamup.club/proxy-image/?url=' + cat['stream_icon']
+                    thumb = 'https://bsweb1-image-proxy.hf.space/proxy-image/?url=' + cat['stream_icon']
                 except:
                     thumb = ''
                 iten = {
