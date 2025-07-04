@@ -42,7 +42,7 @@ def get_stream_tv(i):
         'streams': [{
         'name': 'SKYFLIX',
         'title': i_.get('name', "Live Channel"),
-        'url': f"https://1playpro.alwaysdata.net/proxy?url={i_.get('stream', '')}",
+        'url': f"http://meio.wisp.uno:11793/proxy?url={i_.get('stream', '')}",
         }],
     }
 
