@@ -66,51 +66,53 @@ class xtream_api:
             return []
 
     def list_channels(self, category):
-        # O dicionário 'group' fixo será substituído por uma lógica de mapeamento flexível.
-        # Por enquanto, vamos manter uma versão simplificada para demonstração.
-        # A ideia é que 'category_mapping' seja carregado de uma fonte remota.
-        
-        # Exemplo de mapeamento flexível (isso viria de uma fonte remota)
-        # Para este exemplo, vamos simular um mapeamento simples
         category_mapping = {
-            'Abertos': ['sbt', 'abertos', 'globo', 'record'],
-            'Esportes': ['amazon', 'espn', 'sportv', 'premiere', 'esportes', 'disney', 'max'],
-            'NBA': ['nba'],
-            'PPV': ['ppv'],
-            'Paramount plus': ['paramount'],
+            'Abertos': ['sbt', 'abertos', 'globo', 'record', 'band', 'redetv', 'cultura', 'tv brasil', 'aberta', 'nacional'],
+            'Esportes': ['amazon', 'espn', 'sportv', 'premiere', 'esportes', 'disney', 'max', 'futebol', 'combate', 'lutas', 'velocidade', 'olimpico', 'sport tv', 'fox sports', 'band sports', 'esporte interativo'],
+            'NBA': ['nba', 'basquete'],
+            'PPV': ['ppv', 'pay per view'],
+            'Paramount plus': ['paramount', 'paramount+'],
             'DAZN': ['dazn'],
-            'Nosso Futebol': ['nosso futebol'],
-            'UFC': ['ufc'],
-            'Combate': ['combate'],
-            'NFL': ['nfl'],
-            'Documentarios': ['documentarios', 'documentários'],
-            'Infantil': ['infantil'],
-            'Filmes e Series': ['filmes e séries', 'filmes e series'],
-            'Telecine': ['telecine'],
-            'HBO': ['hbo'],
+            'Nosso Futebol': ['nosso futebol', 'futebol brasileiro'],
+            'UFC': ['ufc', 'mma'],
+            'Combate': ['combate', 'lutas'],
+            'NFL': ['nfl', 'futebol americano'],
+            'Documentarios': ['documentarios', 'documentários', 'history', 'discovery', 'nat geo', 'animal planet'],
+            'Infantil': ['infantil', 'desenhos', 'kids', 'crianças', 'cartoon', 'disney channel', 'nickelodeon', 'discovery kids'],
+            'Filmes e Series': ['filmes e séries', 'filmes e series', 'cinema', 'series', 'filme', 'acao', 'comedia', 'drama', 'terror', 'suspense', 'romance', 'ficcao', 'sci-fi', 'hbo', 'telecine', 'max prime', 'paramount channel', 'universal channel', 'warner channel', 'sony channel', 'fx', 'tnt', 'megapix', 'telecine premium', 'telecine action', 'telecine touch', 'telecine fun', 'telecine pipoca', 'telecine cult'],
+            'Telecine': ['telecine', 'telecine premium', 'telecine action', 'telecine touch', 'telecine fun', 'telecine pipoca', 'telecine cult'],
+            'HBO': ['hbo', 'hbo 2', 'hbo family', 'hbo plus', 'hbo signature', 'hbo max'],
             'Cine Sky': ['cine sky'],
-            'Noticias': ['noticias', 'notícias'],
-            'Musicas': ['musicas', 'músicas'],
-            'Variedades': ['variedades'],
+            'Noticias': ['noticias', 'notícias', 'jornalismo', 'bandnews', 'globonews', 'cnn', 'record news'],
+            'Musicas': ['musicas', 'músicas', 'clipe', 'mtv', 'multishow', 'bis'],
+            'Variedades': ['variedades', 'entretenimento', 'lifestyle', 'gnt', 'discovery home & health', 'off', 'travel box'],
             'Cine 24h': ['cine 24h'],
-            'Desenhos': ['desenhos'],
+            'Desenhos': ['desenhos', 'animacao', 'anime'],
             'Series 24h': ['séries 24h', 'series 24h', '24h series'],
-            'Religiosos': ['religiosos'],
-            '4K': ['4k'],
-            'Radios': ['radios'],
-            'Reality': ['power couple', 'a fazenda', 'bbb', 'big brother']
+            'Religiosos': ['religiosos', 'igreja', 'fe', 'gospel', 'catolico', 'evangelico'],
+            '4K': ['4k', 'uhd', 'ultra hd'],
+            'Radios': ['radios', 'radio'],
+            'Reality': ['power couple', 'a fazenda', 'bbb', 'big brother', 'reality show', 'masterchef', 'de ferias com o ex'],
+            'Internacionais': ['internacionais', 'internacional', 'eua', 'europa', 'asia', 'america latina'],
+            'Locais': ['locais', 'regional', 'cidade'],
+            'Culinaria': ['culinaria', 'gastronomia', 'comida', 'receitas', 'food network'],
+            'Moda e Estilo': ['moda e estilo', 'fashion', 'beleza', 'glitz'],
+            'Educativos': ['educativos', 'educacao', 'aprendizado', 'aula'],
+            'Eventos': ['eventos', 'shows', 'ao vivo', 'especial'],
+            'Retros': ['retros', 'classicos', 'antigos'],
+            'Novelas': ['novelas', 'telenovelas'],
+            'Canais de Audio': ['canais de audio', 'audio'],
+            'Testes': ['testes', 'teste'],
+            'Outros': ['outros', 'diversos', 'geral']
         }
 
         itens = []
         try:
-            # Obter todas as categorias disponíveis do servidor Xtream
             all_live_categories = self.get_live_categories()
             
             if all_live_categories:
-                # Obter as chaves de mapeamento para a categoria solicitada
                 keys_to_match = category_mapping.get(category, [])
                 
-                # Se não houver chaves de mapeamento, tentar usar a própria categoria como chave
                 if not keys_to_match and category:
                     keys_to_match = [category.lower()]
 
@@ -119,17 +121,14 @@ class xtream_api:
                     xtream_cat_id = xtream_cat.get('category_id')
 
                     if not xtream_cat_id:
-                        continue # Pular categorias sem ID
+                        continue
 
-                    # Verificar se o nome da categoria do Xtream corresponde a alguma das chaves de mapeamento
-                    # ou se a categoria solicitada está contida no nome da categoria do Xtream
                     matched = False
                     for key in keys_to_match:
                         if key in xtream_cat_name:
                             matched = True
                             break
                     
-                    # Adicionalmente, se a categoria solicitada for 'All', incluir todos os canais
                     if category == 'All' and 'All' in xtream_cat.get('category_name', ''):
                         matched = True
 
@@ -141,7 +140,7 @@ class xtream_api:
                                 itens.append(l)
         except Exception as e:
             print(f"Erro em list_channels: {e}")
-            pass # Considerar um tratamento de erro mais robusto aqui
+            pass
         return itens
 
     def generate_id_channel(self, name, url, thumb, genre):
@@ -199,5 +198,7 @@ def get_api():
         raise RuntimeError(f'Erro ao decodificar JSON do Firebase: {e}')
     except KeyError as e:
         raise RuntimeError(f'Dados de API incompletos do Firebase: {e}')
+
+
 
 
