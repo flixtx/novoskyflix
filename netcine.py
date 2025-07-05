@@ -3,6 +3,9 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import json
+import base64
+
+HOST_VOD = 'https://netcinez.si/'
 
 def catalog_search(text):
     catalog = []
@@ -162,7 +165,7 @@ def check_item(search,headers,year_imdb,text):
     src = r.text
     soup = BeautifulSoup(src,'html.parser')
     box = soup.find("div", {"id": "box_movies"})
-    movies = box.findAll("div", {"class": "movie"})
+    movies = box.find_all("div", {"class": "movie"})
     count = 0
     for i in movies:
         try:
@@ -401,7 +404,7 @@ def scrape_search(host,headers,text,alternate,year_imdb,type):
 
 def search_link(id):
     streams_final = []
-    host = 'https://netcinez.si/'
+    host = HOST_VOD
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, como Gecko) Chrome/88.0.4324.96 Safari/537.36"}
     try:
         if ':' in id:
@@ -419,11 +422,11 @@ def search_link(id):
                     r = requests.get(link,headers=headers)
                     src = r.text
                     soup = BeautifulSoup(src,'html.parser')
-                    s = soup.find('div', {'id': 'movie'}).find('div', {'class': 'post'}).find('div', {'id': 'cssmenu'}).find('ul').findAll('li', {'class': 'has-sub'})
+                    s = soup.find('div', {'id': 'movie'}).find('div', {'class': 'post'}).find('div', {'id': 'cssmenu'}).find('ul').find_all('li', {'class': 'has-sub'})
                     for n, i in enumerate(s):
                         n += 1
                         if int(season) == n:
-                            e = i.find('ul').findAll('li')
+                            e = i.find('ul').find_all('li')
                             for n, i in enumerate(e):
                                 n += 1
                                 if int(episode) == n:
@@ -521,3 +524,344 @@ def search_link(id):
         pass
     return streams_final
 
+
+def url_para_base64(url):
+    # Converte a URL para bytes e codifica em base64 URL-safe
+    return base64.urlsafe_b64encode(url.encode()).decode()
+
+
+def base64_para_url(base64_str):
+    # Corrige padding se estiver faltando
+    padding = '=' * (-len(base64_str) % 4)
+    return base64.urlsafe_b64decode(base64_str + padding).decode()
+
+
+
+def ntc_search_catalog(query):
+    catalog = []
+    query = query.replace('&amp;', '&')
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, como Gecko) Chrome/88.0.4324.96 Safari/537.36"}
+    url = requests.get(HOST_VOD,headers=headers).url
+    url_parsed = urlparse(url)
+    new_host = url_parsed.scheme + '://' + url_parsed.hostname + '/' 
+    url_search = new_host + '?s=' + quote_plus(query)
+    try:
+        r = requests.get(url_search,headers=headers)
+        src = r.text
+        soup = BeautifulSoup(src,'html.parser')
+        box = soup.find("div", {"id": "box_movies"})
+        movies = box.find_all("div", {"class": "movie"})
+        for i in movies:
+            try:
+                year = i.find('span', {'class': 'year'}).text
+                year = year.replace('–', '')
+            except:
+                year = 0
+            name = i.find('h2').text
+            try:
+                name = name.decode('utf-8')
+            except:
+                pass
+            try:
+                name = name.decode()
+            except:
+                pass
+            try:
+                image = i.find('img').get('src', '')
+            except:
+                image = ''
+            if image:
+                image = 'https://da5f663b4690-proxyimage.baby-beamup.club/proxy-image/?url=' + image
+            title = name
+            try:
+                img = i.find('div', {'class': 'imagen'})
+                link = img.find('a').get('href', '')
+            except:
+                link = ''
+            if link and year:
+                if '/tvshows/' in link:
+                    tp = 'series'
+                else:
+                    tp = 'movie'
+                id_ = 'skyflix:' + url_para_base64(link).replace('=', '')
+                try:
+                    catalog.append({
+                        "id": id_,
+                        "type": tp,
+                        "title": title,
+                        "year": int(year),
+                        "poster": image
+                    }) 
+                except:
+                    pass
+    except:
+        pass
+    return catalog
+
+
+def meta_ntc(type, id):
+    meta = {}
+    if not 'skyflix' in id:
+        return meta
+    id_ = id.replace('skyflix:', '')
+    id_ = base64_para_url(id_)
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, como Gecko) Chrome/88.0.4324.96 Safari/537.36"}
+        r = requests.get(id_,headers=headers)
+        src = r.text
+        soup = BeautifulSoup(src,'html.parser')
+        if type == 'movie':
+            info = soup.find('div', {'id': 'movie'}).find('div', {'class': 'post'})
+            try:
+                image = info.find('div', {'class': 'lazyload cover'}).get('data-bg', '')
+                if image:
+                    image = 'https://da5f663b4690-proxyimage.baby-beamup.club/proxy-image/?url=' + image
+            except:
+                image = ''               
+            name = info.find('div', {'class': 'dataplus'}).find('h1').text.strip().replace('\n', '').replace('\r', '')
+            try:
+                year = info.find('div', {'class': 'dataplus'}).find('div', {'id': 'dato-1'}).find_all('span')[1].find('a').text.strip().replace('\n', '').replace('\r', '')
+                year = int(year)
+            except:
+                year = 0
+            try:
+                imdb_rating = info.find('div', {'class': 'dataplus'}).find('div', {'id': 'dato-1'}).find('div', {'class': 'rank'}).text.strip().replace('\n', '').replace('\r', '')
+                if imdb_rating == '0':
+                    imdb_rating = 0.0
+                else:
+                    imdb_rating = float(imdb_rating)
+            except:
+                imdb_rating = 0.0 
+            genres = []  
+            try:       
+                genres_a = info.find('div', {'class': 'dataplus'}).find('div', {'id': 'dato-1'}).find_all('a', {'rel': 'category tag'})
+                if genres_a:                    
+                    for i in genres_a:
+                        genre_name = i.text
+                        if not 'atuali' in genre_name.lower():
+                            genres.append(genre_name)
+            except:
+                pass
+            try:
+                runtime = info.find('div', {'class': 'dataplus'}).find('div', {'id': 'dato-1'}).find_all('span')[2].text.strip().replace('Min', 'min')
+            except:
+                runtime = ''
+            try:
+                description = info.find('div', {'class': 'dataplus'}).find('div', {'id': 'dato-2'}).find('p').text.strip()
+            except:
+                description = ''
+            meta = {'id': id, 
+                    'type': 'movie', 
+                    'name': name, 
+                    'year': year,
+                    'runtime': runtime,
+                    'imdbRating': imdb_rating,
+                    'poster': image,
+                    'background': image,
+                    'genres': genres,
+                    'trailers': [],
+                    'description': description,
+                    'behaviorHints': {'defaultVideoId': id,
+                        'hasScheduledVideos': False}
+            }
+        elif type == 'series':
+            info = soup.find('div', {'id': 'movie'}).find('div', {'class': 'post'})
+            try:
+                image = info.find('div', {'class': 'lazyload cover'}).get('data-bg', '')
+                if image:
+                    image = 'https://da5f663b4690-proxyimage.baby-beamup.club/proxy-image/?url=' + image
+            except:
+                image = ''               
+            name = info.find('div', {'class': 'dataplus'}).find('h1').text.strip().replace('\n', '').replace('\r', '')
+            try:
+                year = info.find('div', {'class': 'dataplus'}).find('div', {'id': 'dato-1'}).find_all('span')[1].find('a').text.strip().replace('\n', '').replace('\r', '')
+                year = int(year)
+            except:
+                year = 0
+            try:
+                imdb_rating = info.find('div', {'class': 'dataplus'}).find('div', {'id': 'dato-1'}).find('div', {'class': 'rank'}).text.strip().replace('\n', '').replace('\r', '')
+                if imdb_rating == '0':
+                    imdb_rating = 0.0
+                else:
+                    imdb_rating = float(imdb_rating)
+            except:
+                imdb_rating = 0.0 
+            genres = []  
+            try:       
+                genres_a = info.find('div', {'class': 'dataplus'}).find('div', {'id': 'dato-1'}).find_all('a', {'rel': 'category tag'})
+                if genres_a:                    
+                    for i in genres_a:
+                        genre_name = i.text
+                        if not 'atuali' in genre_name.lower():
+                            genres.append(genre_name)
+            except:
+                pass
+            try:
+                runtime = info.find('div', {'class': 'dataplus'}).find('div', {'id': 'dato-1'}).find_all('span')[2].text.strip().replace('Min', 'min')
+            except:
+                runtime = ''
+            try:
+                description = info.find('div', {'class': 'dataplus'}).find('div', {'id': 'dato-2'}).find('p').text.strip()
+            except:
+                description = ''
+            videos = []
+            s = soup.find('div', {'id': 'movie'}).find('div', {'class': 'post'}).find('div', {'id': 'cssmenu'}).find('ul').find_all('li', {'class': 'has-sub'})
+            for season, i in enumerate(s):
+                season_number = season + 1
+                e = i.find('ul').find_all('li')
+                for episode, i in enumerate(e):
+                    episode_number = episode + 1
+                    try:
+                        title_ep = i.find_all('span')[1].text.strip()
+                    except:
+                        title_ep = f'Episódio {str(episode_number)}'
+                    ep_meta = {
+                    'id': id + ':' + str(season_number) + ':' + str(episode_number), 
+                    'season': int(season_number), 
+                    'number': int(episode_number), 
+                    'episode': int(episode_number), 
+                    'name': title_ep, 
+                    'thumbnail': image
+                            }
+                    videos.append(ep_meta)                
+
+            meta = {'id': id, 
+                    'type': 'series', 
+                    'name': name, 
+                    'year': year,
+                    'imdbRating': imdb_rating,
+                    'poster': image,
+                    'background': image,
+                    'genres': genres,
+                    'trailers': [],
+                    'description': description,
+                    'videos': videos,
+                    'behaviorHints': {'hasScheduledVideos': False}
+            }               
+    except:
+        pass
+    return meta
+
+def get_stream_ntc(type, id):
+    streams_final = []
+    if not 'skyflix' in id:
+        return streams_final
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, como Gecko) Chrome/88.0.4324.96 Safari/537.36"}
+    try:
+        url = requests.get(HOST_VOD,headers=headers).url
+        url_parsed = urlparse(url)
+        new_host = url_parsed.scheme + '://' + url_parsed.hostname + '/'
+    except:
+        new_host = HOST_VOD
+    if type == 'movie':
+        id_ = id.replace('skyflix:', '')
+        id_ = base64_para_url(id_)
+        link = id_
+        if not '/tvshows/' in link:
+            dub, leg = opcoes_filmes(link,headers, new_host)
+            if dub:                                        
+                stream_dub, headers_dub = resolve_stream(dub)
+                if stream_dub:
+                    item_dub = {
+                        "url": stream_dub,
+                        "name": "SKYFLIX",
+                        "description": "NTC Server - Dublado",
+                        "behaviorHints": {
+                        "notWebReady": True,
+                        "proxyHeaders": {
+                                        "request": {
+                                        "User-Agent": headers_dub["User-Agent"],
+                                        "Referer": headers_dub["Referer"],
+                                        "Cookie": headers_dub["Cookie"]
+                                        }
+                                    }
+                            }
+                    }
+                    streams_final.append(item_dub)
+            if leg:                                        
+                stream_leg, headers_leg = resolve_stream(leg)
+                if stream_leg:
+                    item_leg = {
+                        "url": stream_leg,
+                        "name": "SKYFLIX",
+                        "description": "NTC Server - Legendado",
+                        "behaviorHints": {
+                        "notWebReady": True,
+                        "proxyHeaders": {
+                                        "request": {
+                                        "User-Agent": headers_leg["User-Agent"],
+                                        "Referer": headers_leg["Referer"],
+                                        "Cookie": headers_leg["Cookie"]
+                                        }
+                                    }
+                            }
+                    }
+                    streams_final.append(item_leg)
+    elif type == 'series':
+        id_ = id.replace('skyflix:', '')
+        parts = id_.split(':')
+        link = base64_para_url(parts[0])
+        season = parts[1]
+        episode = parts[2]
+        try:
+            r = requests.get(link,headers=headers)
+            src = r.text
+            soup = BeautifulSoup(src,'html.parser')
+            s = soup.find('div', {'id': 'movie'}).find('div', {'class': 'post'}).find('div', {'id': 'cssmenu'}).find('ul').find_all('li', {'class': 'has-sub'})
+            for n, i in enumerate(s):
+                n += 1
+                if int(season) == n:
+                    e = i.find('ul').find_all('li')
+                    for n, i in enumerate(e):
+                        n += 1
+                        if int(episode) == n:
+                            e_info = i.find('a')
+                            link = e_info.get('href')
+                            dub, leg = opcoes_filmes(link,headers, new_host)
+                            if dub:                                        
+                                stream_dub, headers_dub = resolve_stream(dub)
+                                if stream_dub:
+                                    item_dub = {
+                                        "url": stream_dub,
+                                        "name": "SKYFLIX",
+                                        "description": "NTC Server - Dublado",
+                                        "behaviorHints": {
+                                        "notWebReady": True,
+                                        "proxyHeaders": {
+                                                        "request": {
+                                                        "User-Agent": headers_dub["User-Agent"],
+                                                        "Referer": headers_dub["Referer"],
+                                                        "Cookie": headers_dub["Cookie"]
+                                                        }
+                                                    }
+                                            }
+                                    }
+                                    streams_final.append(item_dub)
+                            if leg:                                        
+                                stream_leg, headers_leg = resolve_stream(leg)
+                                if stream_leg:
+                                    item_leg = {
+                                        "url": stream_leg,
+                                        "name": "SKYFLIX",
+                                        "description": "NTC Server - Legendado",
+                                        "behaviorHints": {
+                                        "notWebReady": True,
+                                        "proxyHeaders": {
+                                                        "request": {
+                                                        "User-Agent": headers_leg["User-Agent"],
+                                                        "Referer": headers_leg["Referer"],
+                                                        "Cookie": headers_leg["Cookie"]
+                                                        }
+                                                    }
+                                            }
+                                    }
+                                    streams_final.append(item_leg)                                            
+                            break
+                    break
+        except:
+            pass
+    return streams_final
+
+
+
+        
