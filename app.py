@@ -5,7 +5,7 @@ from jinja2 import Environment, FileSystemLoader
 # from slowapi.errors import RateLimitExceeded
 # from slowapi.util import get_remote_address
 import logging
-from netcine import catalog_search, search_link
+from netcine import catalog_search, search_link, ntc_search_catalog, meta_ntc, get_stream_ntc
 import os
 from urllib.parse import quote_plus, quote, unquote
 import get_channels
@@ -20,7 +20,7 @@ app = FastAPI()
 # Configure o logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-VERSION = "1.0.1-ver1"
+VERSION = "1.0.1-ver2"
 logger.info(f"Versão da aplicação: {VERSION}")
 
 
@@ -147,7 +147,7 @@ async def catalog_route(type: str, id: str, request: Request):
 
 @app.get("/catalog/{type}/skyflix/search={query}.json")
 async def search(type: str, query: str, request: Request):
-    catalog = catalog_search(query)
+    catalog = ntc_search_catalog(query)
     results = [item for item in catalog if item.get("type") == type] if catalog else []
     return add_cors(JSONResponse(content={"metas": results}))
 
@@ -159,7 +159,10 @@ async def meta(type: str, id: str, request: Request):
         except:
             m = {}
     else:
-        m = {}
+        try:
+            m = meta_ntc(type, id)
+        except:
+            m = {}
     return add_cors(JSONResponse(content={"meta": m}))
 
 @app.get("/stream/{type}/{id}.json")
@@ -169,13 +172,16 @@ async def stream(type: str, id: str, request: Request):
             streams = get_channels.get_stream_tv(id).get('streams', [])
         except:
             streams = []
-    elif type in ["movie", "series"]:
+    elif 'tt' in id and type in ["movie", "series"]:
         try:
             streams = search_link(id)
         except:
             streams = []
     else:
-        streams = []
+        try:
+            streams = get_stream_ntc(type, id)
+        except:
+            streams = []
     return add_cors(JSONResponse(content={"streams": streams}))
 
 @app.options("/{path:path}")
