@@ -42,7 +42,7 @@ def get_stream_tv(i):
         'streams': [{
         'name': 'SKYFLIX',
         'title': i_.get('name', "Live Channel"),
-        'url': f"http://67.220.85.146:6014/proxy?url={i_.get('stream', '')}",
+        'url': f"http://melo.wisp.uno:11793/proxy?url={i_.get('stream', '')}",
         }],
     }
 
