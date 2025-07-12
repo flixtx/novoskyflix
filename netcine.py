@@ -5,7 +5,7 @@ import re
 import json
 import base64
 
-HOST_VOD = 'https://netcinez.si/'
+HOST_VOD = 'https://netcinehd.si/'
 
 def catalog_search(text):
     catalog = []
